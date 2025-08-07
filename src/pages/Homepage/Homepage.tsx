@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { searchRecipes, getRandomRecipes, Recipe } from '../../services/api';
+import { searchRecipes, getRandomRecipes, Recipe, FilterOptions } from '../../services/api';
 import RecipeCard from '../../components/RecipeCard/RecipeCard';
 import SearchBar from '../../components/SearchBar/SearchBar';
+import FilterBar from '../../components/FilterBar/FilterBar';
 import LoadingSpinner from '../../components/LoadingSpinner/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage/ErrorMessage';
 
@@ -10,15 +11,16 @@ const Homepage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [filters, setFilters] = useState<FilterOptions>({});
 
-  const fetchRecipes = async (query: string = '') => {
+  const fetchRecipes = async (query: string = '', currentFilters: FilterOptions = {}) => {
     try {
       setLoading(true);
       setError(null);
       
       let data;
-      if (query.trim()) {
-        const searchData = await searchRecipes(query, 12);
+      if (query.trim() || Object.keys(currentFilters).length > 0) {
+        const searchData = await searchRecipes(query, 12, 0, currentFilters);
         data = { recipes: searchData.results };
       } else {
         data = await getRandomRecipes(12);
@@ -39,11 +41,16 @@ const Homepage: React.FC = () => {
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    fetchRecipes(query);
+    fetchRecipes(query, filters);
+  };
+
+  const handleFiltersChange = (newFilters: FilterOptions) => {
+    setFilters(newFilters);
+    fetchRecipes(searchQuery, newFilters);
   };
 
   const handleRetry = () => {
-    fetchRecipes(searchQuery);
+    fetchRecipes(searchQuery, filters);
   };
 
   return (
@@ -60,19 +67,26 @@ const Homepage: React.FC = () => {
         <SearchBar onSearch={handleSearch} isLoading={loading} />
       </div>
 
+      {/* Filters */}
+      <FilterBar 
+        filters={filters} 
+        onFiltersChange={handleFiltersChange} 
+        isLoading={loading} 
+      />
+
       {/* Results Header */}
-      {searchQuery && !loading && (
+      {(searchQuery || Object.keys(filters).length > 0) && !loading && (
         <div className="mb-6">
           <h2 className="text-2xl font-semibold text-gray-800">
-            {recipes.length > 0 
-              ? `Found ${recipes.length} recipe${recipes.length === 1 ? '' : 's'} for "${searchQuery}"`
-              : `No recipes found for "${searchQuery}"`
+            {recipes.length > 0
+              ? `Found ${recipes.length} recipe${recipes.length === 1 ? '' : 's'}${searchQuery ? ` for "${searchQuery}"` : ''}`
+              : `No recipes found${searchQuery ? ` for "${searchQuery}"` : ''}`
             }
           </h2>
         </div>
       )}
 
-      {!searchQuery && !loading && recipes.length > 0 && (
+      {!searchQuery && Object.keys(filters).length === 0 && !loading && recipes.length > 0 && (
         <div className="mb-6">
           <h2 className="text-2xl font-semibold text-gray-800">Featured Recipes</h2>
         </div>
@@ -83,10 +97,10 @@ const Homepage: React.FC = () => {
       
       {error && <ErrorMessage message={error} onRetry={handleRetry} />}
       
-      {!loading && !error && recipes.length === 0 && searchQuery && (
+      {!loading && !error && recipes.length === 0 && (searchQuery || Object.keys(filters).length > 0) && (
         <div className="text-center py-12">
           <p className="text-gray-600 text-lg mb-4">No recipes found for your search.</p>
-          <p className="text-gray-500">Try searching for different ingredients or dish names.</p>
+          <p className="text-gray-500">Try different search terms or adjust your filters.</p>
         </div>
       )}
       

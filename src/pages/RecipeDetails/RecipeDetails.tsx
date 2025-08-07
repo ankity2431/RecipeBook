@@ -2,14 +2,29 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router';
 import { Clock, Users, DollarSign, ChefHat, ArrowLeft, Heart, Share2 } from 'lucide-react';
 import { getRecipeDetails, RecipeDetails as RecipeDetailsType } from '../../services/api';
+import { getReviewsForRecipe, getRecipeRating } from '../../services/reviewService';
+import { Review, RecipeRating } from '../../Types/review';
 import LoadingSpinner from '../../components/LoadingSpinner/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage/ErrorMessage';
+import StarRating from '../../components/StarRating/StarRating';
+import RatingOverview from '../../components/RatingOverview/RatingOverview';
+import ReviewForm from '../../components/ReviewForm/ReviewForm';
+import ReviewList from '../../components/ReviewList/ReviewList';
 
 const RecipeDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [recipe, setRecipe] = useState<RecipeDetailsType | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [rating, setRating] = useState<RecipeRating | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const loadReviewsAndRating = () => {
+    if (!id) return;
+    const recipeId = parseInt(id);
+    setReviews(getReviewsForRecipe(recipeId));
+    setRating(getRecipeRating(recipeId));
+  };
 
   const fetchRecipeDetails = async () => {
     if (!id) return;
@@ -19,6 +34,7 @@ const RecipeDetails: React.FC = () => {
       setError(null);
       const data = await getRecipeDetails(parseInt(id));
       setRecipe(data);
+      loadReviewsAndRating();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
     } finally {
@@ -78,6 +94,18 @@ const RecipeDetails: React.FC = () => {
         
         <div className="p-6">
           <h1 className="text-3xl font-bold text-gray-800 mb-4">{recipe.title}</h1>
+          
+          {rating && rating.totalReviews > 0 && (
+            <div className="flex items-center space-x-3 mb-4">
+              <StarRating rating={rating.averageRating} size="lg" />
+              <span className="text-lg font-medium text-gray-700">
+                {rating.averageRating} out of 5
+              </span>
+              <span className="text-gray-500">
+                ({rating.totalReviews} review{rating.totalReviews !== 1 ? 's' : ''})
+              </span>
+            </div>
+          )}
           
           {recipe.summary && (
             <p className="text-gray-600 mb-6 leading-relaxed">
@@ -189,6 +217,26 @@ const RecipeDetails: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Reviews Section */}
+      <div className="mt-8 space-y-6">
+        {rating && <RatingOverview rating={rating} />}
+        
+        <ReviewForm 
+          recipeId={parseInt(id!)} 
+          onReviewAdded={loadReviewsAndRating} 
+        />
+        
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">
+            Reviews ({reviews.length})
+          </h3>
+          <ReviewList 
+            reviews={reviews} 
+            onReviewsUpdate={loadReviewsAndRating} 
+          />
+        </div>
+      </div>
 
       {/* Back Button */}
       <div className="mt-8 text-center">

@@ -2,6 +2,8 @@ import React from 'react';
 import { Link } from 'react-router';
 import { Clock, Users, DollarSign } from 'lucide-react';
 import { Recipe } from '../../services/api';
+import StarRating from '../StarRating/StarRating';
+import { getRecipeRating } from '../../services/reviewService';
 
 interface RecipeCardProps {
   recipe: Recipe;
@@ -16,6 +18,8 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
   const formatPrice = (price: number) => {
     return (price / 100).toFixed(2);
   };
+
+  const rating = getRecipeRating(recipe.id);
 
   return (
     <Link
@@ -43,6 +47,15 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
           <p className="text-gray-600 text-sm line-clamp-3 mb-3">
             {stripHtml(recipe.summary)}
           </p>
+        )}
+        
+        {rating.totalReviews > 0 && (
+          <div className="flex items-center space-x-2 mb-3">
+            <StarRating rating={rating.averageRating} size="sm" />
+            <span className="text-sm text-gray-600">
+              ({rating.totalReviews} review{rating.totalReviews !== 1 ? 's' : ''})
+            </span>
+          </div>
         )}
         
         <div className="flex items-center justify-between text-sm text-gray-500">

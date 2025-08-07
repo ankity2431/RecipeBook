@@ -185,21 +185,5 @@ The application can be deployed to various platforms:
 4. Push to branch: `git push origin feature-name`
 5. Submit a pull request
 
-## 📝 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🙏 Acknowledgments
-
-- **Spoonacular API** for providing comprehensive recipe data
-- **Unsplash** for high-quality food photography
-- **Lucide** for beautiful icons
-- **Tailwind CSS** for the utility-first CSS framework
-
-## 📞 Support
-
-For support, please open an issue in the GitHub repository or contact the development team.
-
----
 
 **Happy Cooking! 🍽️**
